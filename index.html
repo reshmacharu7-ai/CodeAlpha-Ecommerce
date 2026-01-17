@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeAlpha E-commerce Store</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK and modular imports -->
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header>
+    <h1>CodeAlpha Store</h1>
+    <div id="user-actions">
+      <button id="login-btn">Login</button>
+      <button id="signup-btn">Signup</button>
+      <button id="logout-btn" style="display:none;">Logout</button>
+    </div>
+    <a href="cart.html">Cart (<span id="cart-count">0</span>)</a>
+  </header>
+
+  <main>
+    <section id="products">
+      <!-- Products will load here dynamically -->
+    </section>
+  </main>
+
+  <!-- Modal for Login/Signup -->
+  <div id="auth-modal" class="hidden">
+    <div class="modal-content">
+      <h2 id="auth-title">Login</h2>
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <button id="auth-submit">Submit</button>
+      <button id="auth-close">Close</button>
+    </div>
+  </div>
+</body>
+</html>
