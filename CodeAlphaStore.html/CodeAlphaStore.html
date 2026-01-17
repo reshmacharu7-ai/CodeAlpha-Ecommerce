@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAlpha E-Commerce Store</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ===== GLOBAL ===== */
+  * { margin:0; padding:0; box-sizing:border-box; font-family: 'Roboto', sans-serif; }
+  body { background-color: #f9f9f9; color:#333; }
+  a { text-decoration: none; color: inherit; }
+  button { cursor: pointer; }
+
+  /* ===== HEADER ===== */
+  header { display:flex; justify-content: space-between; align-items:center; padding: 15px 50px; background: #0d6efd; color: #fff; position: sticky; top:0; z-index: 1000;}
+  header h1 { font-size: 28px; font-weight:700; }
+  nav { display:flex; gap: 15px; }
+  nav button { padding:8px 12px; border:none; border-radius:5px; background:#fff; color:#0d6efd; font-weight:500; transition:0.3s; }
+  nav button:hover { background:#e0e0e0; }
+
+  /* ===== HERO ===== */
+  .hero { display:flex; align-items:center; justify-content:center; height:60vh; background: linear-gradient(to right,#0d6efd,#6c63ff); color:#fff; text-align:center; }
+  .hero h2 { font-size:48px; margin-bottom:15px; }
+  .hero p { font-size:20px; }
+
+  /* ===== PRODUCTS ===== */
+  #productsContainer { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:20px; padding:30px; }
+  .product-card { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); overflow:hidden; transition:0.3s; display:flex; flex-direction:column; }
+  .product-card:hover { transform: translateY(-5px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+  .product-card img { width:100%; height:180px; object-fit:cover; }
+  .product-card h3 { padding:10px; font-size:20px; text-align:center; }
+  .product-card p { text-align:center; font-size:18px; margin:5px 0; }
+  .product-card button { margin:10px auto 15px; padding:10px 15px; border:none; background:#0d6efd; color:#fff; font-weight:600; border-radius:8px; transition:0.3s; }
+  .product-card button:hover { background:#0056b3; }
+
+  /* ===== CART ===== */
+  #cartModal { position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:10000; }
+  .cart-content { width:90%; max-width:600px; background:#fff; border-radius:12px; padding:25px; position:relative; max-height:80vh; overflow-y:auto; }
+  .cart-content h2 { text-align:center; margin-bottom:20px; }
+  .cart-item { display:flex; justify-content: space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee; }
+  .cart-item img { width:50px; height:50px; object-fit:cover; border-radius:6px; margin-right:10px; }
+  .cart-item-details { display:flex; align-items:center; flex:1; }
+  .cart-item-details p { margin-left:10px; font-weight:500; }
+  .cart-item button { padding:5px 8px; border:none; background:#dc3545; color:#fff; border-radius:5px; }
+  #placeOrder { width:100%; margin-top:15px; padding:12px; border:none; border-radius:8px; background:#28a745; color:#fff; font-size:16px; font-weight:600; }
+
+  /* ===== LOGIN MODAL ===== */
+  #loginModal { position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:10000; }
+  .login-content { width:90%; max-width:400px; background:#fff; border-radius:12px; padding:30px; position:relative; text-align:center; }
+  .login-content h2 { margin-bottom:20px; }
+  .login-content button { padding:10px 15px; border:none; border-radius:8px; background:#0d6efd; color:#fff; font-weight:600; font-size:16px; }
+
+  /* ===== FOOTER ===== */
+  footer { text-align:center; padding:20px; background:#0d6efd; color:#fff; margin-top:30px; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>CodeAlpha Store</h1>
+  <nav>
+    <button id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" style="display:none;">Logout</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h2>Welcome to CodeAlpha E-Commerce</h2>
+    <p>Buy the latest products online with ease and style!</p>
+  </div>
+</section>
+
+<section id="productsContainer">
+  <!-- Products will be loaded here dynamically -->
+</section>
+
+<!-- CART MODAL -->
+<div id="cartModal">
+  <div class="cart-content">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <p>Total: ₹<span id="cartTotal">0</span></p>
+    <button id="placeOrder">Place Order</button>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal">
+  <div class="login-content">
+    <h2>Login to Your Account</h2>
+    <button id="googleLoginBtn">Login with Google</button>
+  </div>
+</div>
+
+<footer>
+  &copy; 2026 CodeAlpha E-Commerce Store. All rights reserved.
+</footer>
+
+<script type="module">
+// ===================== FIREBASE SETUP =====================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDw9pPppOPgRx36fJ9RHacdCeenPdhcHEs",
+  authDomain: "codealpha-ecommerce-4ae8f.firebaseapp.com",
+  projectId: "codealpha-ecommerce-4ae8f",
+  storageBucket: "codealpha-ecommerce-4ae8f.firebasestorage.app",
+  messagingSenderId: "255596839340",
+  appId: "1:255596839340:web:80bb1b9e77e5f02a477a09",
+  measurementId: "G-C55EDLKH24"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ===================== DOM ELEMENTS =====================
+const productsContainer = document.getElementById('productsContainer');
+const cartBtn = document.getElementById('cartBtn');
+const cartModal = document.getElementById('cartModal');
+const cartItemsDiv = document.getElementById('cartItems');
+const cartTotalSpan = document.getElementById('cartTotal');
+const placeOrderBtn = document.getElementById('placeOrder');
+const cartCountSpan = document.getElementById('cartCount');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginModal = document.getElementById('loginModal');
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+
+// ===================== CART LOGIC =====================
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function updateCartUI() {
+  cartCountSpan.innerText = cart.length;
+  cartItemsDiv.innerHTML = '';
+  let total = 0;
+  cart.forEach((item, index) => {
+    total += item.price;
+    const div = document.createElement('div');
+    div.className = 'cart-item';
+    div.innerHTML = `
+      <div class="cart-item-details">
+        <img src="${item.image}" />
+        <p>${item.name} - ₹${item.price}</p>
+      </div>
+      <button onclick="removeFromCart(${index})">Remove</button>
+    `;
+    cartItemsDiv.appendChild(div);
+  });
+  cartTotalSpan.innerText = total;
+}
+
+window.removeFromCart = function(index){
+  cart.splice(index,1);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  updateCartUI();
+}
+
+// Cart Modal Toggle
+cartBtn.addEventListener('click', ()=> cartModal.style.display='flex');
+cartModal.addEventListener('click', e=> { if(e.target===cartModal) cartModal.style.display='none'; });
+
+// ===================== LOAD PRODUCTS =====================
+async function loadProducts(){
+  const productsCol = collection(db,'products');
+  const snapshot = await getDocs(productsCol);
+  productsContainer.innerHTML='';
+  snapshot.docs.forEach(doc=>{
+    const data = doc.data();
+    const div = document.createElement('div');
+    div.className='product-card';
+    div.innerHTML=`
+      <img src="${data.image}" alt="${data.name}">
+      <h3>${data.name}</h3>
+      <p>₹${data.price}</p>
+      <button onclick="addToCart('${doc.id}','${data.name}',${data.price},'${data.image}')">Add to Cart</button>
+    `;
+    productsContainer.appendChild(div);
+  });
+}
+
+window.addToCart = function(id,name,price,image){
+  cart.push({id,name,price,image});
+  localStorage.setItem('cart', JSON.stringify(cart));
+  updateCartUI();
+  alert(`${name} added to cart!`);
+}
+
+// ===================== PLACE ORDER =====================
+placeOrderBtn.addEventListener('click', async ()=>{
+  if(!auth.currentUser){ alert("Login first!"); return; }
+  try{
+    await addDoc(collection(db,'orders'),{
+      userId: auth.currentUser.uid,
+      items: cart,
+      total: cart.reduce((sum,item)=>sum+item.price,0),
+      createdAt: new Date()
+    });
+    cart=[];
+    localStorage.removeItem('cart');
+    updateCartUI();
+    alert("Order placed successfully!");
+    cartModal.style.display='none';
+  }catch(err){
+    console.error(err);
+    alert("Failed to place order.");
+  }
+});
+
+// ===================== AUTH LOGIC =====================
+loginBtn.addEventListener('click', ()=> loginModal.style.display='flex');
+loginModal.addEventListener('click', e=> { if(e.target===loginModal) loginModal.style.display='none'; });
+
+googleLoginBtn.addEventListener('click', async ()=>{
+  const provider = new GoogleAuthProvider();
+  try{
+    await signInWithPopup(auth,provider);
+    loginModal.style.display='none';
+  }catch(err){ console.error(err); alert(err.message); }
+});
+
+logoutBtn.addEventListener('click', async ()=>{
+  await signOut(auth);
+});
+
+// Update UI based on login
+onAuthStateChanged(auth, user=>{
+  if(user){
+    loginBtn.style.display='none';
+    logoutBtn.style.display='inline-block';
+  }else{
+    loginBtn.style.display='inline-block';
+    logoutBtn.style.display='none';
+  }
+});
+
+// ===================== INIT =====================
+updateCartUI();
+loadProducts();
+
+</script>
+</body>
+</html>
